@@ -1,4 +1,10 @@
-#6/10/21 cool, everything is working in this file. Use this version of make_cube
+"""
+This script reads in IGRINS data which has been reduced using the IGRINS Pipeline Package (PLP)
+
+
+"""
+
+#import packages
 import numpy as np
 from astropy.io import fits
 from astropy.time import Time
@@ -9,6 +15,7 @@ import glob
 import os
 import matplotlib.pyplot as plt
 
+#FINDME: put these in an editable control params file at some point
 path='./WASP107/20210418/reduced/' #path to reduced data
 date='20210418' #date of observations
 Tprimary_UT='2021-04-19T03:55:00.000' #time of primary transit midpoint for this epoch
@@ -17,21 +24,23 @@ radeg=188.3864167 #RA of target in degrees
 decdeg=-10.1462139 #Dec of target in degrees
 skyorder=1 #1 if sky frame was taken first in the night, 2 if sky frame was taken second
 
+#make list of observed files
 filearr_specH=sorted(glob.glob(path+'*SDCH*spec.fits'))
 filearr_specK=sorted(glob.glob(path+'*SDCK*spec.fits'))
 
-#for getting shape
+#use one file to get shape
 firstH=fits.open(filearr_specH[0])
 firstK=fits.open(filearr_specK[0])
 
-Nphi=len(filearr_specH)
-#Ndet, Npix=wlgrid.shape
-Ndet=firstH[0].data.shape[0]+firstK[0].data.shape[0]
-Npix=firstH[0].data.shape[1]
-time_MJD=np.zeros(Nphi)
+num_files=len(filearr_specH) #number of observed spectra / different phases observed
 
-data_RAW=np.zeros((Ndet, Nphi,Npix))
-wlgrid=np.zeros((Ndet,Npix))
+num_orders=firstH[0].data.shape[0]+firstK[0].data.shape[0] #number of orders
+num_pixels=firstH[0].data.shape[1] #number of pixels per order
+time_MJD=np.zeros(num_files)
+
+data_RAW=np.zeros((num_orders,num_files,num_pixels))
+wlgrid=np.zeros((num_orders,num_pixels))
+#FINDME: STOPPED HERE
 for i in range(len(filearr_specH)):
 
 	#H
@@ -112,7 +121,7 @@ for i in range(len(time_MJD)):
 #for plotting SNR
 filearr_snrH=sorted(glob.glob(path+'*SDCH*sn.fits'))
 filearr_snrK=sorted(glob.glob(path+'*SDCK*sn.fits'))
-snr_RAW=np.zeros((Ndet, Nphi,Npix))
+snr_RAW=np.zeros((num_orders,num_files,num_pixels))
 for i in range(len(filearr_snrH)):
 	hdu_list = fits.open(filearr_snrH[i])
 	image_snrH = hdu_list[0].data
@@ -126,12 +135,12 @@ wlgrid=wlgrid[whichorders,100:-100]  #cropping edge of orders, converting to um
 snr_RAW=snr_RAW[whichorders,:,100:-100] #cropping edge of orders
 snr_RAW[np.isnan(snr_RAW)]=0. #pruging NaN's
 snr_RAW[snr_RAW <0.]=0. #purging negative values
-Ndet, Npix=wlgrid.shape
+num_orders, num_pixels=wlgrid.shape
 
 #median over phases
 med1=np.median(snr_RAW,axis=1)
 plt.figure()
-for i in range(Ndet): plt.plot(wlgrid[i,:],med1[i,],color='red')
+for i in range(num_orders): plt.plot(wlgrid[i,:],med1[i,],color='red')
 
 #median of each order
 med2=np.median(med1, axis=1)
