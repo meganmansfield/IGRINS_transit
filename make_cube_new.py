@@ -14,6 +14,7 @@ import pdb
 import glob
 import os
 import matplotlib.pyplot as plt
+import pickle
 
 #FINDME: put these in an editable control params file at some point
 path='./WASP107/20210418/reduced/' #path to reduced data
@@ -23,6 +24,7 @@ Per=5.721492 #period
 radeg=188.3864167 #RA of target in degrees
 decdeg=-10.1462139 #Dec of target in degrees
 skyorder=1 #1 if sky frame was taken first in the night, 2 if sky frame was taken second
+plot=True
 
 #make list of observed files
 filearr_specH=sorted(glob.glob(path+'*SDCH*spec.fits'))
@@ -38,77 +40,61 @@ num_orders=firstH[0].data.shape[0]+firstK[0].data.shape[0] #number of orders
 num_pixels=firstH[0].data.shape[1] #number of pixels per order
 time_MJD=np.zeros(num_files)
 
+print('Concatenating data...')
 data_RAW=np.zeros((num_orders,num_files,num_pixels))
 wlgrid=np.zeros((num_orders,num_pixels))
-#FINDME: STOPPED HERE
 for i in range(len(filearr_specH)):
 
 	#H
 	hdu_list = fits.open(filearr_specH[i])
 	image_dataH = hdu_list[0].data
-	# wavelengthH = hdu_list[1].data 
 	hdr=hdu_list[0].header
-	date_beginH=hdr['DATE-OBS'] #in UTC
+	date_beginH=hdr['DATE-OBS']
 	date_endH=hdr['DATE-END']
-	#time_MJD=hdr['MJD-OBS']
 	t1=Time(date_beginH,format='isot',scale='utc')
 	t2=Time(date_endH,format='isot',scale='utc')
+	time_MJD[i]=float(0.5*(t1.mjd+t2.mjd)) #date of observation, in UTC
 
-	time_MJD[i]=float(0.5*(t1.mjd+t2.mjd))
-	print(date_beginH, date_endH, time_MJD[i])
-
-
-	#print('H',date_begin, date_end)
-	#plot(wlgridH[-10,],image_dataH[-10,])
 	#K
 	hdu_list = fits.open(filearr_specK[i])
 	image_dataK = hdu_list[0].data
-	# wavelengthK = hdu_list[1].data 
 	hdr=hdu_list[0].header
-	date_beginK=hdr['DATE-OBS'] #in UTC
+	date_beginK=hdr['DATE-OBS']
 	date_endK=hdr['DATE-END']
 	if date_beginK!=date_beginH:
-		print('Error: H and K files are misaligned')
-	#print(date_begin,date_end)
-	#plot(wlgridK[10,],image_dataK[10,])
+		print('ERROR: H and K files are misaligned')
 	data=np.concatenate([image_dataK,image_dataH])
-	data_RAW[:,i,:]=data #Ndet, Nphi, Npix
-	# wlgrid[:,i,:]=np.concatenate([wavelengthK,wavelengthH])
-	#pdb.set_trace()
+	data_RAW[:,i,:]=data
 
+#use the file that is closest in time to the wavelength calibration as the template wavelength solution
 if skyorder==1:
-	wavefileH=fits.open(filearr_specH[0]) #file that is closest to the wavelength calibration in time
+	wavefileH=fits.open(filearr_specH[0])
 	wavefileK=fits.open(filearr_specK[0])
 	wlgrid=np.concatenate([wavefileK[1].data,wavefileH[1].data])
 elif skyorder==2:
-	wavefileH=fits.open(filearr_specH[-1]) #file that is closest to the wavelength calibration in time
+	wavefileH=fits.open(filearr_specH[-1])
 	wavefileK=fits.open(filearr_specK[-1])
 	wlgrid=np.concatenate([wavefileK[1].data,wavefileH[1].data])
 
-masked=np.isnan(data_RAW)
-#pdb.set_trace()
-#comuting phase array
+masked=np.isnan(data_RAW) #array masking out NaNs
+
+#calculating observed phases
+print('Calculating observed phases...')
 tprimary=Time(Tprimary_UT,format='isot',scale='utc')
-t0=tprimary.mjd #in days
-#Per=1.360031 #period days
+t0=tprimary.mjd
 phi=(time_MJD-t0)/Per
 
-
-
-#barycorrection
+#barycentric velocity correction
+print('Calculating barycentric velocity...')
 gemini = EarthLocation.from_geodetic(lat=-30.2407*u.deg, lon=-70.7366*u.deg, height=2722*u.m)
 sc = SkyCoord(ra=radeg*u.deg, dec=decdeg*u.deg)
-
-#gemini = EarthLocation.from_geodetic(lat=-24.6274*u.deg, lon=-70.4039*u.deg, height=2715*u.m)
-#sc = SkyCoord(ra=37.155108*u.deg, dec=-7.060664*u.deg)
 
 Vbary=np.zeros(len(time_MJD))
 for i in range(len(time_MJD)):
 	barycorr = sc.radial_velocity_correction(obstime=Time(time_MJD[i],format='mjd'), location=gemini)  
 	Vbary[i]=-barycorr.to(u.km/u.s).value
 
-
-import pickle
+#Create output files
 pickle.dump(phi,open('phi.pic','wb'),protocol=2)
 pickle.dump(Vbary,open('Vbary.pic','wb'),protocol=2)
 pickle.dump([wlgrid,data_RAW,skyorder],open('data_RAW_'+date+'.pic','wb'),protocol=2)
@@ -116,55 +102,40 @@ pickle.dump(masked,open('masked.pic','wb'),protocol=2)
 
 for i in range(len(time_MJD)):
 	print(time_MJD[i], Vbary[i])
-
+print('Mean barycentric velocity during observation period is '+str("{:.3f}".format(np.mean(Vbary)))+' km/s')
 
 #for plotting SNR
-filearr_snrH=sorted(glob.glob(path+'*SDCH*sn.fits'))
-filearr_snrK=sorted(glob.glob(path+'*SDCK*sn.fits'))
-snr_RAW=np.zeros((num_orders,num_files,num_pixels))
-for i in range(len(filearr_snrH)):
-	hdu_list = fits.open(filearr_snrH[i])
-	image_snrH = hdu_list[0].data
-	hdu_list = fits.open(filearr_snrK[i])
-	image_snrK = hdu_list[0].data
-	snr_RAW[:,i,:]=np.concatenate([image_snrK,image_snrH])
+if plot==True:
+	filearr_snrH=sorted(glob.glob(path+'*SDCH*sn.fits'))
+	filearr_snrK=sorted(glob.glob(path+'*SDCK*sn.fits'))
+	snr_RAW=np.zeros((num_orders,num_files,num_pixels))
+	for i in range(len(filearr_snrH)):
+		hdu_list = fits.open(filearr_snrH[i])
+		image_snrH = hdu_list[0].data
+		hdu_list = fits.open(filearr_snrK[i])
+		image_snrK = hdu_list[0].data
+		snr_RAW[:,i,:]=np.concatenate([image_snrK,image_snrH])
 
-whichorders=[  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,17, 28, 29, 30, 31, 32, 33,34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]
-wlgrid=wlgrid[whichorders,100:-100]  #cropping edge of orders, converting to um
+	#FINDME: The selection of whichorders here and how to crop the edges of the orders should also be defined in a control file somewhere
+	whichorders=[  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14, 15, 16,17, 28, 29, 30, 31, 32, 33,34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47]
+	wlgrid=wlgrid[whichorders,100:-100]  #cropping edge of orders, converting to um
 
-snr_RAW=snr_RAW[whichorders,:,100:-100] #cropping edge of orders
-snr_RAW[np.isnan(snr_RAW)]=0. #pruging NaN's
-snr_RAW[snr_RAW <0.]=0. #purging negative values
-num_orders, num_pixels=wlgrid.shape
+	snr_RAW=snr_RAW[whichorders,:,100:-100] #cropping edge of orders
+	snr_RAW[np.isnan(snr_RAW)]=0. #remove NaNs
+	snr_RAW[snr_RAW <0.]=0. #remove negative flux values
+	num_orders, num_pixels=wlgrid.shape
 
-#median over phases
-med1=np.median(snr_RAW,axis=1)
-plt.figure()
-for i in range(num_orders): plt.plot(wlgrid[i,:],med1[i,],color='red')
+	#calculate median over phases
+	med1=np.median(snr_RAW,axis=1)
+	plt.figure()
+	for i in range(num_orders): plt.plot(wlgrid[i,:],med1[i,],color='red')
 
-#median of each order
-med2=np.median(med1, axis=1)
-medwl=np.median(wlgrid,axis=1)
-plt.plot(medwl, med2,'ob')
+	#median of each order
+	med2=np.median(med1, axis=1)
+	medwl=np.median(wlgrid,axis=1)
+	plt.plot(medwl, med2,'ob')
 
-plt.show()
-
-# data_RAW=data_RAW[whichorders,:,100:-100] #cropping edge of orders
-# data_RAW[np.isnan(data_RAW)]=0. #pruging NaN's
-# data_RAW[data_RAW <0.]=0. #purging negative values
-# Ndet, Npix=wlgrid.shape
-
-# #median over phases
-# med1=np.median(data_RAW,axis=1)
-# plt.figure()
-# for i in range(Ndet): plt.plot(wlgrid[i,:],med1[i,],color='red')
-
-# #median of each order
-# med2=np.median(med1, axis=1)
-# medwl=np.median(wlgrid,axis=1)
-# plt.plot(medwl, med2,'ob')
-
-# plt.show()
+	plt.show()
 
 
 
