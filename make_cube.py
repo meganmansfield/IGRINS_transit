@@ -10,7 +10,6 @@ from astropy.io import fits
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
 import astropy.units as u
-import pdb
 import glob
 import os
 import matplotlib.pyplot as plt
@@ -90,8 +89,8 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 		pickle.dump(Vbary,open('Vbary.pic','wb'),protocol=2)
 		pickle.dump([wlgrid,data_RAW,skyorder],open('data_RAW_'+date+'.pic','wb'),protocol=2)
 
-	for i in range(len(time_MJD)):
-		print(time_MJD[i], Vbary[i])
+	#for i in range(len(time_MJD)):
+	#	print(time_MJD[i], Vbary[i])
 	print('Mean barycentric velocity during observation period is '+str("{:.3f}".format(np.mean(Vbary)))+' km/s')
 
 	#for plotting SNR
@@ -131,8 +130,15 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 		plt.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
 		plt.tight_layout()
 		plt.show()
+
+	#Clean the NaNs and negative flux values from the data, and remove unwanted orders
+	print('Cleaning data and removing unwanted orders...')
+	cdata=np.delete(data_RAW,badorders,axis=0)
+	cdata=cdata[:,:,trimedges[0]:trimedges[1]]
+	cdata[np.isnan(cdata)]=0. #purging NaNs
+	cdata[cdata <0.]=0. #purging negative values
 	
-	return phi,Vbary,wlgrid,data_RAW
+	return phi,Vbary,wlgrid,data_RAW,cwlgrid,cdata
 
 
 

@@ -4,6 +4,7 @@ Run full IGRINS pipeline; code shows places where parameters can be changed
 
 import make_cube
 import numpy as np
+import wavecal
 
 path='/Users/megan/Documents/Projects/GeminiTransitSurvey/WASP107/20210418/reduced/' #path to reduced data
 date='20210418' #date of observations
@@ -15,5 +16,10 @@ skyorder=1 #1 if sky frame was taken first in the night, 2 if sky frame was take
 badorders=np.array([0,21,22,23,24,25,26,52,53]) #set which orders will get ignored. Lower numbers are at the red end of the spectrum, and IGRINS has 54 orders
 trimedges=np.array([100,-100]) #set how many points will get trimmed off the edges of each order: fist number is blue edge, second number is red edge
 
-#hmmmm...need to figure out in make_cube how to select all but the badorders.
-phi,Vbary,wlgrid,data_RAW=make_cube.make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedges,plot=True,output=False)
+#Make data cube and calculate barycentric velocity
+phi,Vbary,grid_RAW,data_RAW,wlgrid,data=make_cube.make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedges,plot=True,output=False)
+
+#Perform wavelength calibration
+wavecorrect=wavecal.correct(wlgrid,data,skyorder,output=False)
+
+
