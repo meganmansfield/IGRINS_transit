@@ -43,7 +43,7 @@ def correct(wl_arr, data_arr, skyorder, output=False):
 			data_corrected[order, frame,] = data_stretched #normalized
 
 	if output==True:
-		pickle.dump([wl_data,wavecorrect],open('wavelengthcalibrated.pic','wb'),protocol=2)
+		pickle.dump([wl_arr,data_corrected],open('wavelengthcalibrated.pic','wb'),protocol=2)
 
 	return data_corrected
 

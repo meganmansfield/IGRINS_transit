@@ -13,13 +13,13 @@ Per=5.721492 #period
 radeg=188.3864167 #RA of target in degrees
 decdeg=-10.1462139 #Dec of target in degrees
 skyorder=1 #1 if sky frame was taken first in the night, 2 if sky frame was taken second
-badorders=np.array([0,21,22,23,24,25,26,52,53]) #set which orders will get ignored. Lower numbers are at the red end of the spectrum, and IGRINS has 54 orders
+badorders=np.array([0,22,23,24,25,26,52,53]) #set which orders will get ignored. Lower numbers are at the red end of the spectrum, and IGRINS has 54 orders
 trimedges=np.array([100,-100]) #set how many points will get trimmed off the edges of each order: fist number is blue edge, second number is red edge
 
 #Make data cube and calculate barycentric velocity
-phi,Vbary,grid_RAW,data_RAW,wlgrid,data=make_cube.make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedges,plot=True,output=False)
+phi,Vbary,grid_RAW,data_RAW,wlgrid,data=make_cube.make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedges,plot=True,output=True,testorders=True)
 
 #Perform wavelength calibration
-wavecorrect=wavecal.correct(wlgrid,data,skyorder,output=False)
+wavecorrect=wavecal.correct(wlgrid,data,skyorder,output=True)
 
 

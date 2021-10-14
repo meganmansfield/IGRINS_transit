@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import pickle
 from matplotlib import rc
 
-def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedges,plot=True,output=False):
+def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedges,plot=True,output=False,testorders=False):
 	#make list of observed files
 	filearr_specH=sorted(glob.glob(path+'*SDCH*spec.fits'))
 	filearr_specK=sorted(glob.glob(path+'*SDCK*spec.fits'))
@@ -123,6 +123,16 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 
 		#median of each order
 		med2=np.median(med1, axis=1)
+		if testorders==True:
+			below100=[]
+			below200=[]
+			for i in range(num_orders):
+				if med2[i]<100.:
+					below100.append(i+1)
+				elif med2[i]<200.:
+					below200.append(i+1)
+			print('Orders with SNR<100: ',below100)
+			print('Orders with 100<SNR<200: ',below200)
 		medwl=np.median(cwlgrid,axis=1)
 		plt.plot(medwl, med2,'ob')
 		plt.xlabel('Wavelength [$\mu$m]',fontsize=20)
