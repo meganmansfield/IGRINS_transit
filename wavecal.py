@@ -4,6 +4,7 @@ import numpy as np
 import pickle
 from scipy import interpolate
 from scipy.optimize import curve_fit
+import matplotlib.pyplot as plt
 import pdb
 
 def stretched(wl, shift, stretch):
@@ -19,10 +20,11 @@ def stretched(wl, shift, stretch):
 	return data_int
 
 
-def correct(wl_arr, data_arr, skyorder, output=False):
+def correct(wl_arr, data_arr, skyorder, plot=False, output=False):
 	'''
 	Perform wavelength calibration by shifting/stretching each frame to match the frame closest in time to the wavelength standard.
 	'''
+	print('Performing wavelength calibration...')
 	data_corrected = np.zeros(data_arr.shape)
 	num_orders, num_files, num_pixels = data_arr.shape
 	for order in range(num_orders):
@@ -45,7 +47,25 @@ def correct(wl_arr, data_arr, skyorder, output=False):
 	if output==True:
 		pickle.dump([wl_arr,data_corrected],open('wavelengthcalibrated.pic','wb'),protocol=2)
 
-	return data_corrected
+	if plot==True:
+		plt.figure()
+		if skyorder==1:
+			plt.plot(wl_arr[13,1000:1200],data_arr[13,0,1000:1200]/np.max(data_arr[13,0,:]),color='k',label='Template Spectrum')
+			plt.plot(wl_arr[13,1000:1200],data_arr[13,int(num_files/2.),1000:1200]/np.max(data_arr[13,int(num_files/2.),:]),color='r',label='Pre-Shift')
+			plt.plot(wl_arr[13,1000:1200],data_corrected[13,int(num_files/2.),1000:1200],color='b',label='Post-Shift')
+		elif skyorder==2:
+			plt.plot(wl_arr[13,1000:1200],data_arr[13,-1,1000:1200]/np.max(data_arr[13,0,:]),color='k',label='Template Spectrum')
+			plt.plot(wl_arr[13,1000:1200],data_arr[13,int(num_files/2.),1000:1200]/np.max(data_arr[13,int(num_files/2.),:]),color='r',label='Pre-Shift')
+			plt.plot(wl_arr[13,1000:1200],data_corrected[13,int(num_files/2.),1000:1200],color='b',label='Post-Shift')
+		plt.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
+		plt.xlabel('Wavelength[$\mu$m]',fontsize=20)
+		plt.ylabel('Relative Flux',fontsize=20)
+		plt.legend(fontsize=15)
+		plt.tight_layout()
+		plt.savefig('Wavelength_Calibration.png')
+		plt.show()
+
+	return wl_arr,data_corrected
 
 	
 

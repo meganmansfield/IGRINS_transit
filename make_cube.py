@@ -95,25 +95,26 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 
 	#for plotting SNR
 
+	
+	filearr_snrH=sorted(glob.glob(path+'*SDCH*sn.fits'))
+	filearr_snrK=sorted(glob.glob(path+'*SDCK*sn.fits'))
+	snr_RAW=np.zeros((num_orders,num_files,num_pixels))
+	for i in range(len(filearr_snrH)):
+		hdu_list = fits.open(filearr_snrH[i])
+		image_snrH = hdu_list[0].data
+		hdu_list = fits.open(filearr_snrK[i])
+		image_snrK = hdu_list[0].data
+		snr_RAW[:,i,:]=np.concatenate([image_snrK,image_snrH])
+
+	cwlgrid=np.delete(wlgrid,badorders,axis=0)
+	cwlgrid=cwlgrid[:,trimedges[0]:trimedges[1]]
+	csnr_RAW=np.delete(snr_RAW,badorders,axis=0)
+	csnr_RAW=csnr_RAW[:,:,trimedges[0]:trimedges[1]]
+	csnr_RAW[np.isnan(csnr_RAW)]=0. #remove NaNs
+	csnr_RAW[csnr_RAW <0.]=0. #remove negative flux values
+	num_orders, num_pixels=cwlgrid.shape
+
 	if plot==True:
-		filearr_snrH=sorted(glob.glob(path+'*SDCH*sn.fits'))
-		filearr_snrK=sorted(glob.glob(path+'*SDCK*sn.fits'))
-		snr_RAW=np.zeros((num_orders,num_files,num_pixels))
-		for i in range(len(filearr_snrH)):
-			hdu_list = fits.open(filearr_snrH[i])
-			image_snrH = hdu_list[0].data
-			hdu_list = fits.open(filearr_snrK[i])
-			image_snrK = hdu_list[0].data
-			snr_RAW[:,i,:]=np.concatenate([image_snrK,image_snrH])
-
-		cwlgrid=np.delete(wlgrid,badorders,axis=0)
-		cwlgrid=cwlgrid[:,trimedges[0]:trimedges[1]]
-		csnr_RAW=np.delete(snr_RAW,badorders,axis=0)
-		csnr_RAW=csnr_RAW[:,:,trimedges[0]:trimedges[1]]
-		csnr_RAW[np.isnan(csnr_RAW)]=0. #remove NaNs
-		csnr_RAW[csnr_RAW <0.]=0. #remove negative flux values
-		num_orders, num_pixels=cwlgrid.shape
-
 		#calculate median over phases
 		med1=np.median(csnr_RAW,axis=1)
 
@@ -123,22 +124,28 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 
 		#median of each order
 		med2=np.median(med1, axis=1)
+		compare=np.max(med2)
 		if testorders==True:
 			below100=[]
 			below200=[]
+			below75per=[]
 			for i in range(num_orders):
 				if med2[i]<100.:
 					below100.append(i+1)
 				elif med2[i]<200.:
 					below200.append(i+1)
+				if med2[i]<0.7*compare:
+					below75per.append(i+1)
 			print('Orders with SNR<100: ',below100)
 			print('Orders with 100<SNR<200: ',below200)
+			print('Orders with <70\% transmittance: ',below75per)
 		medwl=np.median(cwlgrid,axis=1)
 		plt.plot(medwl, med2,'ob')
 		plt.xlabel('Wavelength [$\mu$m]',fontsize=20)
 		plt.ylabel('Signal-to-Noise',fontsize=20)
 		plt.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
 		plt.tight_layout()
+		plt.savefig('SNR_per_order.png')
 		plt.show()
 
 	#Clean the NaNs and negative flux values from the data, and remove unwanted orders
