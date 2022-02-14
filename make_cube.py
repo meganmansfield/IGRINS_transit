@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import pickle
 from matplotlib import rc
 
-def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedges,plot=True,output=False,testorders=False):
+def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,trimedges,plot=True,output=False,testorders=False):
 	#make list of observed files
 	filearr_specH=sorted(glob.glob(path+'*SDCH*spec.fits'))
 	filearr_specK=sorted(glob.glob(path+'*SDCK*spec.fits'))
@@ -29,7 +29,7 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 
 	num_orders=firstH[0].data.shape[0]+firstK[0].data.shape[0] #number of orders
 	num_pixels=firstH[0].data.shape[1] #number of pixels per order
-	time_MJD=np.zeros(num_files)
+	time_start=np.zeros(num_files)
 
 	print('Making data cube...')
 	data_RAW=np.zeros((num_orders,num_files,num_pixels))
@@ -42,9 +42,8 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 		hdr=hdu_list[0].header
 		date_beginH=hdr['DATE-OBS']
 		date_endH=hdr['DATE-END']
-		t1=Time(date_beginH,format='isot',scale='utc')
-		t2=Time(date_endH,format='isot',scale='utc')
-		time_MJD[i]=float(0.5*(t1.mjd+t2.mjd)) #date of observation, in UTC
+		t1=Time(date_beginH,format='isot',scale='utc') #date of observation, in TimeISOT format from astropy
+		time_start[i]=t1.mjd
 
 		#K
 		hdu_list = fits.open(filearr_specK[i])
@@ -69,23 +68,19 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 
 	#calculating observed phases
 	print('Calculating observed phases...')
-	tprimary=Time(Tprimary_UT,format='isot',scale='utc')
-	t0=tprimary.mjd
-	phi=(time_MJD-t0)/Per
-
-##### More accurate Phi from Mike: implement some time
-	# phi=np.zeros(Nphi)
-	# for i in range(Nphi):
-	# 	phi[i]=(Time(str(time[i]), format='isot', scale='utc') + .5*xptime*u.s - Time(Tprimary_UT, format='isot', scale='tdb', location=gemini).utc).value / ( Per * u.day).value
+	gemini = EarthLocation.from_geodetic(lat=-30.2407*u.deg, lon=-70.7366*u.deg, height=2722*u.m)
+	tprimary=Time(Tprimary_UT, format='isot', scale='tdb', location=gemini).mjd
+	phi=np.zeros(num_files)
+	for i in range(num_files):
+		phi[i]=(time_start[i]+.5*exptime/3600./24.-tprimary)/Per
 
 	#barycentric velocity correction
 	print('Calculating barycentric velocity...')
-	gemini = EarthLocation.from_geodetic(lat=-30.2407*u.deg, lon=-70.7366*u.deg, height=2722*u.m)
 	sc = SkyCoord(ra=radeg*u.deg, dec=decdeg*u.deg)
 
-	Vbary=np.zeros(len(time_MJD))
-	for i in range(len(time_MJD)):
-		barycorr = sc.radial_velocity_correction(obstime=Time(time_MJD[i],format='mjd'), location=gemini)  
+	Vbary=np.zeros(len(time_start))
+	for i in range(len(time_start)):
+		barycorr = sc.radial_velocity_correction(obstime=Time(time_start[i],format='mjd'), location=gemini)  
 		Vbary[i]=-barycorr.to(u.km/u.s).value
 
 	#Create output files
@@ -94,8 +89,6 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 		pickle.dump(Vbary,open('Vbary.pic','wb'),protocol=2)
 		pickle.dump([wlgrid,data_RAW,skyorder],open('data_RAW_'+date+'.pic','wb'),protocol=2)
 
-	#for i in range(len(time_MJD)):
-	#	print(time_MJD[i], Vbary[i])
 	print('Mean barycentric velocity during observation period is '+str("{:.3f}".format(np.mean(Vbary)))+' km/s')
 
 	#for plotting SNR
