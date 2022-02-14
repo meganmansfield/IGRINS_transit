@@ -2,8 +2,9 @@
 import pickle
 import numpy as np
 import matplotlib.pyplot as plt
-import pdb
 from scipy import interpolate
+from matplotlib import rc
+rc('axes',linewidth=2)
 
 ### DEFINE FUNCTIONS ###
 def PCA(cube, PCs = 6):
@@ -45,25 +46,46 @@ def PCA(cube, PCs = 6):
 
 	return pca_data, pca_scale
 
-def do_pca(wl_data,normalized,nPCAs,test_pca=True,output=False,test_order=5):
+def do_pca(wl_data,normalized,nPCAs,test_pca=True,plot=False,output=False,test_order=5):
 	# wl_data,normalized=pickle.load(open(wavecal,'rb'))
 
 	num_orders,num_files,num_pixels=normalized.shape
-	sub_order_1=5
-	sub_order_2=25	#for plotting purposes
 	sub_pca_matrix=np.zeros((num_files,num_pixels,nPCAs))
 	if test_pca==True:
 		for numpcs in range(1,nPCAs+1):
 			pca_clean_data,pca_noplanet=PCA(normalized, numpcs) #working with normalized data
 			sub_pca_matrix[:,:,numpcs-1]=pca_clean_data[test_order,:,:]
 			plt.figure()
-			plt.imshow(sub_pca_matrix[:,:,numpcs-1],aspect=10)
+			plt.imshow(sub_pca_matrix[:,:,numpcs-1],extent=(1,num_files,np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:])),aspect=1300)
+			plt.xlabel('Exposure',fontsize=20)
+			plt.ylabel('Wavelength',fontsize=20)
+			plt.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
 			plt.colorbar()
 			plt.title(str(numpcs))
 			plt.show()
 
 	else:
 		pca_clean_data,pca_noplanet=PCA(normalized,nPCAs) #working with normalized data
+
+	if plot==True:
+		one_component,one_noplanet=PCA(normalized,1)
+		vmin=np.min((np.min(normalized),np.min(pca_clean_data)))
+		vmax=np.max((np.max(normalized),np.max(pca_clean_data)))
+		fig,(ax1,ax2,ax3)=plt.subplots(3,1,sharex=True,figsize=(7.5,8))
+		ax1.imshow(normalized[test_order,:,:],extent=(1,num_files,np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:])),aspect=1300)
+		ax1.set_title('Before PCA',fontsize=15)
+		ax1.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
+		ax2.imshow(one_component[test_order,:,:],extent=(1,num_files,np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:])),aspect=1300)
+		ax2.set_title('1 Component Removed',fontsize=15)
+		ax2.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
+		ax3.imshow(pca_clean_data[test_order,:,:],extent=(1,num_files,np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:])),aspect=1300)
+		ax3.set_xlabel('Exposure',fontsize=20)
+		ax3.set_title(str(nPCAs)+' Components Removed',fontsize=15)
+		ax3.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
+		fig.add_subplot(111, frame_on=False)
+		plt.tick_params(labelcolor='none',bottom=False,left=False)
+		plt.ylabel('Wavelength [$\mu$m]',fontsize=20)
+		plt.show()
 
 	if output==True:
 		pickle.dump([wl_data,pca_clean_data],open('PCA_'+str(nPCAs)+'_clean_data.pic','wb'),protocol=2)

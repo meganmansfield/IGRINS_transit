@@ -1,0 +1,7 @@
+astropy
+glob
+matplotlib
+numpy
+os
+pickle
+scipy

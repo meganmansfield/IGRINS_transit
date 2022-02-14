@@ -5,7 +5,6 @@ import pickle
 from scipy import interpolate
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as plt
-import pdb
 
 def stretched(wl, shift, stretch):
 	'''
@@ -54,7 +53,7 @@ def correct(wl_arr, data_arr, skyorder, plot=False, output=False):
 			plt.plot(wl_arr[13,1000:1200],data_arr[13,int(num_files/2.),1000:1200]/np.max(data_arr[13,int(num_files/2.),:]),color='r',label='Pre-Shift')
 			plt.plot(wl_arr[13,1000:1200],data_corrected[13,int(num_files/2.),1000:1200],color='b',label='Post-Shift')
 		elif skyorder==2:
-			plt.plot(wl_arr[13,1000:1200],data_arr[13,-1,1000:1200]/np.max(data_arr[13,0,:]),color='k',label='Template Spectrum')
+			plt.plot(wl_arr[13,1000:1200],data_arr[13,-1,1000:1200]/np.max(data_arr[13,-1,:]),color='k',label='Template Spectrum')
 			plt.plot(wl_arr[13,1000:1200],data_arr[13,int(num_files/2.),1000:1200]/np.max(data_arr[13,int(num_files/2.),:]),color='r',label='Pre-Shift')
 			plt.plot(wl_arr[13,1000:1200],data_corrected[13,int(num_files/2.),1000:1200],color='b',label='Post-Shift')
 		plt.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')

@@ -73,6 +73,11 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 	t0=tprimary.mjd
 	phi=(time_MJD-t0)/Per
 
+##### More accurate Phi from Mike: implement some time
+	# phi=np.zeros(Nphi)
+	# for i in range(Nphi):
+	# 	phi[i]=(Time(str(time[i]), format='isot', scale='utc') + .5*xptime*u.s - Time(Tprimary_UT, format='isot', scale='tdb', location=gemini).utc).value / ( Per * u.day).value
+
 	#barycentric velocity correction
 	print('Calculating barycentric velocity...')
 	gemini = EarthLocation.from_geodetic(lat=-30.2407*u.deg, lon=-70.7366*u.deg, height=2722*u.m)
@@ -106,9 +111,15 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 		image_snrK = hdu_list[0].data
 		snr_RAW[:,i,:]=np.concatenate([image_snrK,image_snrH])
 
-	cwlgrid=np.delete(wlgrid,badorders,axis=0)
+	if len(badorders)>0:
+		cwlgrid=np.delete(wlgrid,badorders,axis=0)
+	else:
+		cwlgrid=wlgrid
 	cwlgrid=cwlgrid[:,trimedges[0]:trimedges[1]]
-	csnr_RAW=np.delete(snr_RAW,badorders,axis=0)
+	if len(badorders)>0:
+		csnr_RAW=np.delete(snr_RAW,badorders,axis=0)
+	else:
+		csnr_RAW=snr_RAW
 	csnr_RAW=csnr_RAW[:,:,trimedges[0]:trimedges[1]]
 	csnr_RAW[np.isnan(csnr_RAW)]=0. #remove NaNs
 	csnr_RAW[csnr_RAW <0.]=0. #remove negative flux values
@@ -131,11 +142,11 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 			below75per=[]
 			for i in range(num_orders):
 				if med2[i]<100.:
-					below100.append(i+1)
+					below100.append(i)
 				elif med2[i]<200.:
-					below200.append(i+1)
+					below200.append(i)
 				if med2[i]<0.7*compare:
-					below75per.append(i+1)
+					below75per.append(i)
 			print('Orders with SNR<100: ',below100)
 			print('Orders with 100<SNR<200: ',below200)
 			print('Orders with <70\% transmittance: ',below75per)
@@ -150,7 +161,10 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,badorders,trimedge
 
 	#Clean the NaNs and negative flux values from the data, and remove unwanted orders
 	print('Cleaning data and removing unwanted orders...')
-	cdata=np.delete(data_RAW,badorders,axis=0)
+	if len(badorders)>0:
+		cdata=np.delete(data_RAW,badorders,axis=0)
+	else:
+		cdata=data_RAW
 	cdata=cdata[:,:,trimedges[0]:trimedges[1]]
 	cdata[np.isnan(cdata)]=0. #purging NaNs
 	cdata[cdata <0.]=0. #purging negative values
