@@ -115,7 +115,7 @@ def run_CCF(wl_data,pca_clean_data,pca_noplanet,model,phi,Vbary,Kp,Vsys,scale,nu
     print("Note: this calculation may take several hours to complete on a normal computer.")
     for i in range(len(Kparr)):
         if verbose:
-            print("Kp step:"+float(i))
+            print("Kp step:"+str(i))
         for j in range(len(Vsysarr)):
             logL_M, CCF1=log_likelihood_PCA(Vsysarr[j], Kparr[i],scale, coeff_spline, wl_data, pca_clean_data,pca_noplanet,phi,Vbary,numPCs)
             logLarr[i,j]=logL_M
