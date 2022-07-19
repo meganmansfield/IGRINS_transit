@@ -114,12 +114,14 @@ def run_CCF(wl_data,pca_clean_data,pca_noplanet,model,phi,Vbary,Kp,Vsys,scale,nu
     print("Calculating cross-correlation...")
     print("Note: this calculation may take several hours to complete on a normal computer.")
     for i in range(len(Kparr)):
+        if verbose:
+            print("Kp step:"+float(i))
         for j in range(len(Vsysarr)):
             logL_M, CCF1=log_likelihood_PCA(Vsysarr[j], Kparr[i],scale, coeff_spline, wl_data, pca_clean_data,pca_noplanet,phi,Vbary,numPCs)
             logLarr[i,j]=logL_M
             CCFarr[i,j]=CCF1
-            if verbose:
-                print(i, j, CCF1, logL_M)
+            # if verbose:
+            #     print(i, j, CCF1, logL_M)
 
     if output==True:
         pickle.dump([Vsysarr, Kparr,CCFarr,logLarr],open('PCA_'+name+'.pic','wb'))
