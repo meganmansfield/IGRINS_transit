@@ -133,7 +133,7 @@ def run_CCF(wl_data,pca_clean_data,pca_noplanet,model,phi,Vbary,Kp,Vsys,scale,nu
     sigmaarr = (CCFarr-med)/stdev
     maxindices=np.unravel_index(sigmaarr.argmax(),sigmaarr.shape)
     if verbose:
-        print("Maximum detection significance: "+float(sigmaarr.max())+". Maximum detection at Vsys="+float(Vsysarr[maxindices[1]])+", Kp="+float(Kparr[maxindices[0]]))
+        print("Maximum detection significance: "+str(sigmaarr.max())+". Maximum detection at Vsys="+str(Vsysarr[maxindices[1]])+", Kp="+str(Kparr[maxindices[0]]))
 
     fig,ax=plt.subplots()
     cax=ax.imshow(CCFarr,origin='lower', extent=[Vsysarr.min(),Vsysarr.max(), Kparr.min(),Kparr.max()],aspect="auto",interpolation='none',zorder=0)
