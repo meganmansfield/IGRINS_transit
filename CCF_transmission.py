@@ -86,8 +86,8 @@ def run_CCF(wl_data,pca_clean_data,pca_noplanet,model,phi,Vbary,Kp,Vsys,scale,nu
     num_orders, num_files, num_pixels = pca_clean_data.shape
 
     #set up array of Kp and Vsys values to perform cross-correlation at
-    Kparr=np.linspace(-250,250,501)
-    Vsysarr=np.linspace(-50,50,101)
+    Kparr=np.linspace(130,250,21)
+    Vsysarr=np.linspace(-15,15,11)
 
     logLarr=np.zeros((len(Kparr),len(Vsysarr)))
     CCFarr=np.zeros((len(Kparr),len(Vsysarr)))
@@ -137,7 +137,7 @@ def run_CCF(wl_data,pca_clean_data,pca_noplanet,model,phi,Vbary,Kp,Vsys,scale,nu
 
     fig,ax=plt.subplots()
     cax=ax.imshow(CCFarr,origin='lower', extent=[Vsysarr.min(),Vsysarr.max(), Kparr.min(),Kparr.max()],aspect="auto",interpolation='none',zorder=0)
-    plt.scatter(Vsysarr[maxindices1[1]],Kparr[maxindices1[0]],s=80,color='k',marker='x',zorder=4)
+    plt.scatter(Vsysarr[maxindices[1]],Kparr[maxindices[0]],s=80,color='k',marker='x',zorder=4)
     cbar=plt.colorbar(cax)
     plt.axvline(x=Vsys,color='white',ls='--',lw=2,zorder=1)
     plt.axhline(y=Kp,color='white',ls='--',lw=2,zorder=1)
@@ -153,7 +153,7 @@ def run_CCF(wl_data,pca_clean_data,pca_noplanet,model,phi,Vbary,Kp,Vsys,scale,nu
     rc('axes',linewidth=2)
     fig,ax=plt.subplots()
     cax=ax.imshow(sigmaarr,origin='lower', extent=[Vsysarr.min(),Vsysarr.max(), Kparr.min(),Kparr.max()],aspect="auto",interpolation='none',zorder=0)
-    plt.scatter(Vsysarr[maxindices1[1]],Kparr[maxindices1[0]],s=80,color='k',marker='x',zorder=4)
+    plt.scatter(Vsysarr[maxindices[1]],Kparr[maxindices[0]],s=80,color='k',marker='x',zorder=4)
     cbar=plt.colorbar(cax)
     plt.axvline(x=Vsys,color='white',ls='--',lw=2,zorder=1)
     plt.axhline(y=Kp,color='white',ls='--',lw=2,zorder=1)
