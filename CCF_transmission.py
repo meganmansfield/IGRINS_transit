@@ -96,7 +96,7 @@ def run_CCF(wl_data,pca_clean_data,pca_noplanet,model,phi,Vbary,Kp,Vsys,scale,nu
     rprs_model=model[:,1]
 
     #convolution of model to correct for system rotation
-    #essentially broadens the lines to account for the stellar rotation
+    #essentially broadens the lines to account for the planetary rotation
     ker_rot=get_rot_ker(vsini, wl_model)
     model_conv_rot = np.convolve(rprs_model,ker_rot,mode='same')
 

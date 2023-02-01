@@ -37,7 +37,7 @@ def trail(wl_data,pca_clean_data,pca_noplanet,model,phi,Vbary,Kp,Vsys,scale,Per,
     starRV= Vsys + Vbary
 
     #convolution of model to correct for system rotation
-    #essentially broadens the lines to account for the stellar rotation
+    #essentially broadens the lines to account for the planetary rotation
     wl_model=model[:,0]
     rprs_model=model[:,1]
     ker_rot=get_rot_ker(vsini, wl_model)
