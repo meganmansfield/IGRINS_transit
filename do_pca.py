@@ -51,12 +51,13 @@ def do_pca(wl_data,normalized,nPCAs,test_pca=True,plot=False,output=False,test_o
 
 	num_orders,num_files,num_pixels=normalized.shape
 	sub_pca_matrix=np.zeros((num_files,num_pixels,nPCAs))
+	aspect=0.01/num_files
 	if test_pca==True:
 		for numpcs in range(1,nPCAs+1):
 			pca_clean_data,pca_noplanet=PCA(normalized, numpcs) #working with normalized data
 			sub_pca_matrix[:,:,numpcs-1]=pca_clean_data[test_order,:,:]
 			plt.figure()
-			plt.imshow(sub_pca_matrix[:,:,numpcs-1],extent=(np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:]),1,num_files),aspect=0.0001)
+			plt.imshow(sub_pca_matrix[:,:,numpcs-1],extent=(np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:]),1,num_files),aspect=aspect)
 			plt.ylabel('Exposure',fontsize=20)
 			plt.xlabel('Wavelength',fontsize=20)
 			plt.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
@@ -72,13 +73,13 @@ def do_pca(wl_data,normalized,nPCAs,test_pca=True,plot=False,output=False,test_o
 		vmin=np.min((np.min(normalized),np.min(pca_clean_data)))
 		vmax=np.max((np.max(normalized),np.max(pca_clean_data)))
 		fig,(ax1,ax2,ax3)=plt.subplots(3,1,sharex=True,figsize=(7.5,8))
-		ax1.imshow(normalized[test_order,:,:],extent=(np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:]),1,num_files),aspect=0.0001)
+		ax1.imshow(normalized[test_order,:,:],extent=(np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:]),1,num_files),aspect=aspect)
 		ax1.set_title('Before PCA',fontsize=15)
 		ax1.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
-		ax2.imshow(one_component[test_order,:,:],extent=(np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:]),1,num_files),aspect=0.0001)
+		ax2.imshow(one_component[test_order,:,:],extent=(np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:]),1,num_files),aspect=aspect)
 		ax2.set_title('1 Component Removed',fontsize=15)
 		ax2.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
-		ax3.imshow(pca_clean_data[test_order,:,:],extent=(np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:]),1,num_files),aspect=0.0001)
+		ax3.imshow(pca_clean_data[test_order,:,:],extent=(np.min(wl_data[test_order,:]),np.max(wl_data[test_order,:]),1,num_files),aspect=aspect)
 		ax3.set_xlabel('Wavelength [$\mu$m]',fontsize=20)
 		ax3.set_title(str(nPCAs)+' Components Removed',fontsize=15)
 		ax3.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
