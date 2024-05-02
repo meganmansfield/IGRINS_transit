@@ -139,7 +139,6 @@ def prior(cube, ndim, nparams):
         #HRCCS specific parameters
         cube[8]=norm(180.,20.).ppf(cube[8]) #Kp
         cube[9]=-20+40*cube[9] #Vsys
-        cube[10]=-1+2*cube[10] #loga
         # cube[11]=-0.01+0.02*cube[11] #dphi
 
 
@@ -151,9 +150,9 @@ def loglike(cube, ndim, nparams):
     t0=time.time()
     #unpacking parameters from "cube"
     logH2O,  logCO, logOH, logHmFF, logHmBF=cube[0],cube[1],cube[2],cube[3],cube[4]
-    Tiso, xRp, logPc,Kp,Vsys,loga=cube[5],cube[6],cube[7],cube[8],cube[9],cube[10]#dphi,cube[10]
+    Tiso, xRp, logPc,Kp,Vsys=cube[5],cube[6],cube[7],cube[8],cube[9]#dphi,cube[10]
     dphi=0.
-    scale=10.**loga #spectral scale/strecth
+    scale=1. #spectral scale/strecth
   
     ##all values required by forward model go here--even if they are fixed--this goes into xx (see fx_trans in fm.py)
     xx=np.array([logH2O, logCO,  logOH,  logHmFF, logHmBF, Tiso,   xRp, logPc]) #the -15's are for unused gases--can add

@@ -10,17 +10,16 @@ from matplotlib import rc
 def get_rot_ker(vsini, wStar):
     nx, = wStar.shape
     dRV = np.mean(2.0*(wStar[1:]-wStar[0:-1])/(wStar[1:]+wStar[0:-1]))*2.998E5
-    nker = 401
+    nker =401
     hnker = (nker-1)//2
     rker = np.zeros(nker)
     for ii in range(nker):
         ik = ii - hnker
         x = ik*dRV / vsini
         if np.abs(x) < 1.0:
-            y = np.sqrt(1-x**2)
+            y = 1/(np.pi * np.sqrt(1 - x**2))
             rker[ii] = y
     rker /= rker.sum()
-  
     return rker
 
 

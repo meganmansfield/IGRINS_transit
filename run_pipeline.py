@@ -26,6 +26,9 @@ phi,Vbary,grid_RAW,data_RAW,wlgrid,data=make_cube.make_cube(path,date,Tprimary_U
 #Perform wavelength calibration
 wlgrid,wavecorrect=wavecal.correct(wlgrid,data,skyorder,plot=True,output=True)
 
+#Crop out-of-transit exposures; optional
+croppeddata,croppedph,croppedVbary=phasecrop.phasecrop(wavecorrect,phi,Vbary,Per,T14)
+
 # #Perform PCA
 wlgrid,pca_clean_data,pca_noplanet=do_pca.do_pca(wlgrid,wavecorrect,4,test_pca=False,plot=True,output=True)
 
