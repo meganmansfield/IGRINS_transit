@@ -19,7 +19,7 @@ def stretched(wl, shift, stretch):
 	return data_int
 
 
-def correct(wl_arr, data_arr, skyorder, plot=False, output=False):
+def correct(wl_arr, data_arr, skyorder, plot=False, output=False, norm=True):
 	'''
 	Perform wavelength calibration by shifting/stretching each frame to match the frame closest in time to the wavelength standard.
 	'''
@@ -41,21 +41,27 @@ def correct(wl_arr, data_arr, skyorder, plot=False, output=False):
 			cs_data = interpolate.splrep(wl_raw, data_to_correct,s=0.0)
 			popt, pconv = curve_fit(stretched, wl_raw, rcontrol, p0=np.array([0,1.]))
 			data_stretched = stretched(wl_raw, *popt)
-			data_corrected[order, frame,] = data_stretched #normalized
+			if norm:
+				data_corrected[order, frame,] = data_stretched #normalized
+			else:
+				data_corrected[order, frame,] = data_stretched*data_arr[order,frame,].max() #normalized
 
 	if output==True:
-		pickle.dump([wl_arr,data_corrected],open('wavelengthcalibrated.pic','wb'),protocol=2)
+		if norm:
+			pickle.dump([wl_arr,data_corrected],open('wavelengthcalibrated.pic','wb'),protocol=2)
+		else:
+			pickle.dump([wl_arr,data_corrected],open('wavelengthcalibrated_unnorm.pic','wb'),protocol=2)
 
 	if plot==True:
 		plt.figure()
 		if skyorder==1:
 			plt.plot(wl_arr[13,1000:1200],data_arr[13,0,1000:1200]/np.max(data_arr[13,0,:]),color='k',label='Template Spectrum')
 			plt.plot(wl_arr[13,1000:1200],data_arr[13,int(num_files/2.),1000:1200]/np.max(data_arr[13,int(num_files/2.),:]),color='r',label='Pre-Shift')
-			plt.plot(wl_arr[13,1000:1200],data_corrected[13,int(num_files/2.),1000:1200],color='b',label='Post-Shift')
+			plt.plot(wl_arr[13,1000:1200],data_corrected[13,int(num_files/2.),1000:1200]/np.max(data_corrected[13,int(num_files/2.),:]),color='b',label='Post-Shift')
 		elif skyorder==2:
 			plt.plot(wl_arr[13,1000:1200],data_arr[13,-1,1000:1200]/np.max(data_arr[13,-1,:]),color='k',label='Template Spectrum')
 			plt.plot(wl_arr[13,1000:1200],data_arr[13,int(num_files/2.),1000:1200]/np.max(data_arr[13,int(num_files/2.),:]),color='r',label='Pre-Shift')
-			plt.plot(wl_arr[13,1000:1200],data_corrected[13,int(num_files/2.),1000:1200],color='b',label='Post-Shift')
+			plt.plot(wl_arr[13,1000:1200],data_corrected[13,int(num_files/2.),1000:1200]/np.max(data_corrected[13,int(num_files/2.),:]),color='b',label='Post-Shift')
 		plt.tick_params(labelsize=20,axis="both",top=True,right=True,width=2,length=8,direction='in')
 		plt.xlabel('Wavelength[$\mu$m]',fontsize=20)
 		plt.ylabel('Relative Flux',fontsize=20)
