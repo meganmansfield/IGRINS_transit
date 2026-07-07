@@ -16,7 +16,7 @@ import matplotlib.pyplot as plt
 import pickle
 from matplotlib import rc
 
-def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,trimedges,plot=True,output=False,testorders=False):
+def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,trimedges,telescope,plot=True,output=False,testorders=False):
 	#make list of observed files
 	filearr_specH=sorted(glob.glob(path+'*SDCH*spec.fits'))
 	filearr_specK=sorted(glob.glob(path+'*SDCK*spec.fits'))
@@ -68,8 +68,17 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,
 
 	#calculating observed phases
 	print('Calculating observed phases...')
-	gemini = EarthLocation.from_geodetic(lat=-30.2407*u.deg, lon=-70.7366*u.deg, height=2722*u.m)
-	tprimary=Time(Tprimary_UT, format='isot', scale='tdb', location=gemini).mjd
+	if telescope=='gemini-s':
+		lat=-30.2407*u.deg
+		lon=-70.7366*u.deg
+		height=2722*u.m
+	elif telescope=='gemini-n':
+		lat=19.823806*u.deg
+		lon=-155.46906*u.deg
+		height=4213*u.m
+	telescope = EarthLocation.from_geodetic(lat=lat, lon=lon, height=height)
+	tprimary=Time(Tprimary_UT, format='isot', scale='tdb', location=telescope).mjd
+	print(tprimary)
 	phi=np.zeros(num_files)
 	for i in range(num_files):
 		phi[i]=(time_start[i]+.5*exptime/3600./24.-tprimary)/Per
@@ -80,7 +89,7 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,
 
 	Vbary=np.zeros(len(time_start))
 	for i in range(len(time_start)):
-		barycorr = sc.radial_velocity_correction(obstime=Time(time_start[i],format='mjd'), location=gemini)  
+		barycorr = sc.radial_velocity_correction(obstime=Time(time_start[i],format='mjd'), location=telescope)  
 		Vbary[i]=-barycorr.to(u.km/u.s).value
 
 	#Create output files
