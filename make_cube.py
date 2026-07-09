@@ -15,11 +15,12 @@ import os
 import matplotlib.pyplot as plt
 import pickle
 from matplotlib import rc
+import pdb
 
 def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,trimedges,telescope,plot=True,output=False,testorders=False):
 	#make list of observed files
-	filearr_specH=sorted(glob.glob(path+'*SDCH*spec.fits'))
-	filearr_specK=sorted(glob.glob(path+'*SDCK*spec.fits'))
+	filearr_specH=sorted(glob.glob(path+'*H*spec.fits'))
+	filearr_specK=sorted(glob.glob(path+'*K*spec.fits'))
 
 	#use one file to get shape
 	firstH=fits.open(filearr_specH[0])
@@ -27,8 +28,8 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,
 
 	num_files=len(filearr_specH) #number of observed spectra / different phases observed
 
-	num_orders=firstH[0].data.shape[0]+firstK[0].data.shape[0] #number of orders
-	num_pixels=firstH[0].data.shape[1] #number of pixels per order
+	num_orders=firstH[1].data.shape[0]+firstK[1].data.shape[0] #number of orders
+	num_pixels=firstH[1].data.shape[1] #number of pixels per order
 	time_start=np.zeros(num_files)
 
 	print('Making data cube...')
@@ -38,19 +39,19 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,
 
 		#H
 		hdu_list = fits.open(filearr_specH[i])
-		image_dataH = hdu_list[0].data
+		image_dataH = hdu_list[1].data
 		hdr=hdu_list[0].header
 		date_beginH=hdr['DATE-OBS']
-		date_endH=hdr['DATE-END']
+		# date_endH=hdr['DATE-END']
 		t1=Time(date_beginH,format='isot',scale='utc') #date of observation, in TimeISOT format from astropy
 		time_start[i]=t1.mjd
 
 		#K
 		hdu_list = fits.open(filearr_specK[i])
-		image_dataK = hdu_list[0].data
+		image_dataK = hdu_list[1].data
 		hdr=hdu_list[0].header
 		date_beginK=hdr['DATE-OBS']
-		date_endK=hdr['DATE-END']
+		# date_endK=hdr['DATE-END']
 		if date_beginK!=date_beginH:
 			print('ERROR: H and K files are misaligned')
 		data=np.concatenate([image_dataK,image_dataH])
@@ -60,11 +61,11 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,
 	if skyorder==1:
 		wavefileH=fits.open(filearr_specH[0])
 		wavefileK=fits.open(filearr_specK[0])
-		wlgrid=np.concatenate([wavefileK[1].data,wavefileH[1].data])
+		wlgrid=np.concatenate([wavefileK[3].data,wavefileH[3].data])
 	elif skyorder==2:
 		wavefileH=fits.open(filearr_specH[-1])
 		wavefileK=fits.open(filearr_specK[-1])
-		wlgrid=np.concatenate([wavefileK[1].data,wavefileH[1].data])
+		wlgrid=np.concatenate([wavefileK[3].data,wavefileH[3].data])
 
 	#calculating observed phases
 	print('Calculating observed phases...')
@@ -105,13 +106,26 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,
 	
 	filearr_snrH=sorted(glob.glob(path+'*SDCH*sn.fits'))
 	filearr_snrK=sorted(glob.glob(path+'*SDCK*sn.fits'))
-	snr_RAW=np.zeros((num_orders,num_files,num_pixels))
-	for i in range(len(filearr_snrH)):
-		hdu_list = fits.open(filearr_snrH[i])
-		image_snrH = hdu_list[0].data
-		hdu_list = fits.open(filearr_snrK[i])
-		image_snrK = hdu_list[0].data
-		snr_RAW[:,i,:]=np.concatenate([image_snrK,image_snrH])
+	if len(filearr_snrH)>0:
+		snr_RAW=np.zeros((num_orders,num_files,num_pixels))
+		for i in range(len(filearr_snrH)):
+			hdu_list = fits.open(filearr_snrH[i])
+			image_snrH = hdu_list[0].data
+			hdu_list = fits.open(filearr_snrK[i])
+			image_snrK = hdu_list[0].data
+			snr_RAW[:,i,:]=np.concatenate([image_snrK,image_snrH])
+	else:
+		snr_RAW=np.zeros((num_orders,num_files,num_pixels))
+		for i in range(len(filearr_specH)):
+			hdu_list = fits.open(filearr_specH[i])
+			image_snrH = np.zeros_like(hdu_list[1].data)
+			condition = ~np.isnan(hdu_list[1].data) & ~np.isnan(hdu_list[2].data) & (hdu_list[2].data != 0)
+			np.divide(hdu_list[1].data, np.sqrt(hdu_list[2].data), out=image_snrH, where=condition)
+			hdu_list = fits.open(filearr_specK[i])
+			image_snrK = np.zeros_like(hdu_list[1].data)
+			condition = ~np.isnan(hdu_list[1].data) & ~np.isnan(hdu_list[2].data) & (hdu_list[2].data != 0)
+			np.divide(hdu_list[1].data, np.sqrt(hdu_list[2].data), out=image_snrK, where=condition)
+			snr_RAW[:,i,:]=np.concatenate([image_snrK,image_snrH])
 
 	if len(badorders)>0:
 		cwlgrid=np.delete(wlgrid,badorders,axis=0)
