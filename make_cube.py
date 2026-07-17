@@ -104,8 +104,8 @@ def make_cube(path,date,Tprimary_UT,Per,radeg,decdeg,skyorder,exptime,badorders,
 	#for plotting SNR
 
 	
-	filearr_snrH=sorted(glob.glob(path+'*SDCH*sn.fits'))
-	filearr_snrK=sorted(glob.glob(path+'*SDCK*sn.fits'))
+	filearr_snrH=sorted(glob.glob(path+'*H*sn.fits'))
+	filearr_snrK=sorted(glob.glob(path+'*K*sn.fits'))
 	if len(filearr_snrH)>0:
 		snr_RAW=np.zeros((num_orders,num_files,num_pixels))
 		for i in range(len(filearr_snrH)):
